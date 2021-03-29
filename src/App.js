@@ -1,23 +1,47 @@
-import logo from './logo.svg';
-import './App.css';
+import './app.scss';
+import React from 'react';
+import CSVReader from 'react-csv-reader';
+
 
 function App() {
+  const papaparseOptions = {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+    transformHeader: header =>
+      header
+        .toLowerCase()
+        .replace(/\W/g, '_')
+  };
+
+  function handleForce(file, fileInfo) {
+
+    console.log(file);
+    console.log(fileInfo);
+  }
+
+  function handleDarkSideForce(error) {
+    console.log(error);
+  }
+
+  
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <CSVReader
+        strict
+
+        className="csv-reader-input"
+        onFileLoaded={handleForce}
+        onError={handleDarkSideForce}
+        parserOptions={papaparseOptions}
+        inputId="ObiWan"
+        inputName="ObiWan"
+        inputStyle={{ }}
+      />
+      <div className='result-wrapper'>
+
+      </div>
     </div>
   );
 }
