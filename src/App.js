@@ -17,9 +17,6 @@ function App() {
         .replace(/\W/g, '_')
   };
 
-  function da() {
-    console.log(data);
-  }
 
   function checkDuplicates(dataArray) {
     for (const item of dataArray) {
@@ -54,9 +51,6 @@ function App() {
         parserOptions={papaparseOptions}
         onFileLoaded={fileHandle}
       />
-      <div className='result-wrapper'>
-        <button onClick={da}></button>
-      </div>
       {data ?
       <Table array={data}/>
       : null}

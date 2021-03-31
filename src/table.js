@@ -1,12 +1,41 @@
 import React from 'react';
+import './table.scss';
 
 function Table({ array }) {
+
+  const headArray = [
+    "ID",
+    "Full Name",
+    "Phone",
+    "Email", 
+    "Age", 
+    "Experience",
+    "Yearly Income",
+    "Has children",
+    "License states",
+    "Expiration date",
+    "License number",
+    "Duplicate with"
+  ];
+
+
   console.log(array);
-  const head = Object.keys(array[0]);
 
-  
+  const headItems = headArray.map(item => {
+    return <td key={item}>{item}</td>;
+  });
 
+  function getItems(obj) {
+    let row = [<td key="id">{obj.id}</td>];
+    for (const item in obj) {
+      if(item !== "id") row.push(<td key={item}>{obj[item]}</td>)
+    }
+    return row;
+  }
 
+  const bodyItems = array.map(obj => {
+    return (<tr key={"tr" + obj.id}>{getItems(obj)}</tr>)
+  })
 
 
 
@@ -15,17 +44,12 @@ function Table({ array }) {
     <div className='table'>
       <table>
         <thead>
-          <tr>
-            {head.map(item => <td key={item}>{item}</td>)}
+          <tr key="head-tr">
+            {headItems}
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
+          {bodyItems}
         </tbody>
       </table>
     </div>
