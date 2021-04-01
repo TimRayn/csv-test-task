@@ -1,8 +1,13 @@
 import './app.scss';
 import React, { useState } from 'react';
 import CSVReader from 'react-csv-reader';
-import Table from './table';
+import TableComponent from './table';
 import moment from 'moment';
+import STATES from './states.json';
+
+const statesShorts = Object.keys(STATES);
+const statesFulls = Object.values(STATES);
+const REQUIRED_FIELDS = ['full_name', 'phone', 'email'];
 
 function ErrorComponent({ errorText }) {
   return (
@@ -16,7 +21,7 @@ function App() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
-  const papaparseOptions = {
+  const parseOptions = {
     header: true,
     skipEmptyLines: 'greedy',
     transformHeader: header =>
@@ -30,86 +35,93 @@ function App() {
     for (const item of dataArray) {
       const matchPhone = dataArray.find(elem => elem !== item && elem.phone === item.phone);
       if (matchPhone) {
-        item.duplicate_with = matchPhone.id;
+        if (item.duplicate_with === '-') item.duplicate_with = matchPhone.id;
         item.bad_data.push('phone');
       }
       const matchEmail = dataArray.find(elem => elem !== item && elem.email.toLowerCase() === item.email.toLowerCase());
       if (matchEmail) {
-        item.duplicate_with = matchEmail.id;
+        if (item.duplicate_with === '-') item.duplicate_with = matchEmail.id;
         item.bad_data.push('email');
       }
     }
   }
 
   function parseData(dataArr) {
-    dataArr.map(obj => {
-      // cut spaces and check for empty fields
-      for (const key in obj) {
-        if (key !== 'bad_data') obj[key] = obj[key].trim();
-        if (obj[key] === '' && ['full_name', 'phone', 'email'].includes(key)) {
-          setError(`Row with id ${obj.id} has empty required field!`);
-          obj.bad_data.push(key);
+    dataArr.forEach(candidate => {
+      for (const key in candidate) {
+        // cut spaces
+        if (key !== 'bad_data') candidate[key] = candidate[key].trim();
+        // check for required fields
+        if (candidate[key] === '' && REQUIRED_FIELDS.includes(key)) {
+          setError(`Row with id ${candidate.id} has empty required field!`);
+          candidate.bad_data.push(key);
         }
       }
 
       // parse age
-      obj.age = Number(obj.age);
-      if (obj.age < 21)
-        obj.bad_data.push('age');
+      candidate.age = Number(candidate.age);
+      if (candidate.age < 21)
+        candidate.bad_data.push('age');
 
       // parse experience
-      if (obj.experience > obj.age - 21 || obj.experience < 0)
-        obj.bad_data.push('experience');
+      if (candidate.experience > candidate.age - 21 || candidate.experience < 0)
+        candidate.bad_data.push('experience');
 
       // parse yearly income
-      obj.yearly_income = Number(obj.yearly_income).toFixed(2);
-      if (obj.yearly_income < 0 || obj.yearly_income > 1000000)
-        obj.bad_data.push('yearly_income');
+      candidate.yearly_income = Number(candidate.yearly_income).toFixed(2);
+      if (candidate.yearly_income < 0 || candidate.yearly_income > 1000000)
+        candidate.bad_data.push('yearly_income');
 
       // parse license states
-      // не впевнений,чи правильно зрозумів завдання
-      parseStates(obj.license_states);
-      if (obj.license_states === '') obj.bad_data.push('license_states');
+      // не впевнений,чи правильно зрозумів завдання;
+      // розраховано на строки типу такої: "CA, California | AL | Texas | Montana, MT"
+      parseStates(candidate);
 
       // parse expiration date
-      parseDate(obj.expiration_date, obj.bad_data);
+      validateDate(candidate.expiration_date, candidate.bad_data);
 
       // parse phone
-      obj.phone = '+1' + obj.phone.slice(-10);
-      if (obj.phone.lenght < 12 || !obj.phone.match(/^\+\d/)) obj.bad_data.push('phone');
+      candidate.phone = '+1' + candidate.phone.slice(-10);
+      if (candidate.phone.length < 12 || !candidate.phone.match(/^\+\d/)) candidate.bad_data.push('phone');
 
       //parse has children
-      if (obj.has_children === '') obj.has_children = 'FALSE';
-      if (!['TRUE', 'FALSE'].includes(obj.has_children)) obj.bad_data.push('has_children');
+      if (candidate.has_children === '') candidate.has_children = 'FALSE';
+      if (!['TRUE', 'FALSE'].includes(candidate.has_children)) candidate.bad_data.push('has_children');
 
       // parse license number
-      if (!obj.license_number.match(/\w{6}/)) obj.bad_data.push("license_number");
-
-
+      if (!candidate.license_number.match(/\w{6}/)) candidate.bad_data.push("license_number");
     });
   }
 
-  function parseDate(date, bad_data) {
+  function validateDate(date, bad_data) {
     if (!(moment(date, 'YYYY-MM-DD', true).isValid() ||
-      moment(date, 'MM/DD/YYYY', true))) bad_data.push('expiration_date');
+      moment(date, 'MM/DD/YYYY', true).isValid())) bad_data.push('expiration_date');
   }
 
-  function parseStates(states) {
-    states.split('|').map(state => {
-      if (!state.includes(',')) return state;
-      return state.split(',').map(shortState => {
-        if (shortState.length < 3) return shortState;
-        return '';
-      }).join('');
-    }).join(', ');
+  function parseStates(candidate) {
+    let isOk = true;
+    let statesArray = candidate.license_states.split('|');
+    statesArray = statesArray.map(stateNames => stateNames.split(',').map(state => {
+      state = state.trim();
+      if (statesShorts.includes(state)) {
+        return state;
+      }
+      else if (statesFulls.includes(state)) {
+        const resultState = statesShorts.find(short => STATES[short] === state)
+        return resultState;
+      }
+      isOk = false;
+      return state;
+    }));
+    candidate.license_states = [...new Set(...statesArray)].join(', ');
+    if (!isOk) candidate.bad_data.push('license_states');
   }
+
 
   function fileHandle(fileData, fileInfo) {
-    console.log(fileInfo);
     if (fileInfo.name.slice(-4) !== '.csv') {
       setData(null);
       setError(true);
-      console.log(data);
       return;
     }
     setError(null);
@@ -119,7 +131,6 @@ function App() {
       item.bad_data = [];
       return item;
     });
-    console.log(newData);
 
     parseData(newData);
     checkDuplicates(newData);
@@ -130,12 +141,12 @@ function App() {
     <div className='app'>
       <CSVReader
         cssClass='csv-reader-input'
-        parserOptions={papaparseOptions}
+        parserOptions={parseOptions}
         onFileLoaded={fileHandle}
         label='Import users'
       />
       {data ?
-        <Table array={data} />
+        <TableComponent array={data} />
         : null}
       {error ?
         <ErrorComponent errorText={error} />
