@@ -9,5 +9,28 @@ html, body, .root, .app {
 .app{
   
   flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   
+}
+
+.csv-input{
+  display: none;
+}
+.csv-label{
+  display: block;
+  border: 1px solid seagreen;
+  border-radius: 5px;
+  background-color:yellowgreen;
+  padding: 7px 30px;
+  color: white;
+  cursor: pointer;
+  bottom: 10px;
+}
+
+.error {
+  background-color:rgba($color: salmon, $alpha: 0.5);
+  
+  border: 3px solid red;
+  padding: 30px;
+  font-size: 19px;
 }

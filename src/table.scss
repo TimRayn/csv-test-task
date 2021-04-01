@@ -3,6 +3,7 @@ table {
   border-collapse: collapse;
   table-layout: fixed;
   width: auto;
+  margin: 40px 0px;
   thead{
     font-weight: bold;
     background-color:lightskyblue;
@@ -15,5 +16,5 @@ td{
 }
 
 .bad {
-  background-color:salmon;
+  background-color:rgba($color: salmon, $alpha: 0.5);
 }
